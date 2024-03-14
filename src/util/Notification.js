@@ -1,142 +1,77 @@
-import {
-  getMessaging,
-  getToken,
-  onMessage,
-  isSupported,
-} from "firebase/messaging";
-// import { messaging as messagingRecieve } from "@/config/firebase";
-import { app } from "@/config/firebase";
-import { getUserId } from "@/util/Utils";
-import axiosInstance from "@/config/axiosConfig";
-import { isEmpty } from "lodash";
-
-const messaging = (async () => {
-  try {
-    const isSupportedBrowser = await isSupported();
-    if (isSupportedBrowser) {
-      return getMessaging(app);
-    }
-    console.log("Firebase not supported this browser");
-    return null;
-  } catch (err) {
-    console.log(err);
-    return null;
-  }
-})();
-export async function requestPermission(cb, cbToken) {
-  console.log("requestPermission ...");
-  Notification.requestPermission().then(async (permission) => {
-    try {
-      if (permission === "granted") {
-        console.log("hehe");
-        const messagingResolve = await messaging;
-        if (messagingResolve == null) return;
-        onMessage(messagingResolve, (_payload) => {
-          console.log(_payload);
-
-          cb?.(_payload);
-          // Xử lý thông báo ở đây
-        });
-        if (isEmpty(localStorage.getItem("deviceTokenId"))) {
-          try {
-            const currentToken = await getToken(messagingResolve, {
-              vapidKey:
-                "BGTHhYZ0eqCQs4xZXH_PgJmdMz2Q4l1PC0k9VpvuKWUcF5wzujjdOJn_QTlu3KgOx2Ehok5cCeyky66JsWqY4sA",
-            });
-            console.log("currentToken, ", currentToken);
-            await cbToken?.(currentToken || "");
-            localStorage.setItem("deviceTokenId", currentToken);
-          } catch (e) {
-            console.log(e);
-          }
-        }
-      } else {
-        console.log("Do not have permission!");
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  });
-}
-
-export async function requestPermissionLoginPage(cb, cbToken) {
-  console.log("requestPermissionLoginPage ...");
-  const permission = await Notification.requestPermission();
-  try {
-    if (permission === "granted") {
-      console.log("hehe");
-      const messagingResolve = await messaging;
-      if (messagingResolve == null) return;
-      onMessage(messagingResolve, (_payload) => {
-        console.log(_payload);
-
-        cb?.(_payload);
-        // Xử lý thông báo ở đây
-      });
-
-      try {
-        localStorage.setItem("deviceTokenId", "");
-        const currentToken = await getToken(messagingResolve, {
-          vapidKey:
-            "BGTHhYZ0eqCQs4xZXH_PgJmdMz2Q4l1PC0k9VpvuKWUcF5wzujjdOJn_QTlu3KgOx2Ehok5cCeyky66JsWqY4sA",
-        });
-        console.log("currentToken, ", currentToken);
-        await cbToken?.(currentToken || "");
-        localStorage.setItem("deviceTokenId", currentToken);
-      } catch (e) {
-        console.log(e);
-      }
-    } else {
-      console.log("Do not have permission!");
-    }
-  } catch (error) {
-    console.log(error);
-  }
-
-  // Notification.requestPermission().then(async (permission) => {
-  //   try {
-  //     if (permission === "granted") {
-  //       console.log("hehe");
-  //       const messagingResolve = await messaging;
-  //       if (messagingResolve == null) return;
-  //       onMessage(messagingResolve, (_payload) => {
-  //         console.log(_payload);
-
-  //         cb?.(_payload);
-  //         // Xử lý thông báo ở đây
-  //       });
-
-  //       try {
-  //         localStorage.setItem("deviceTokenId", "");
-  //         const currentToken = await getToken(messagingResolve, {
-  //           vapidKey:
-  //             "BGTHhYZ0eqCQs4xZXH_PgJmdMz2Q4l1PC0k9VpvuKWUcF5wzujjdOJn_QTlu3KgOx2Ehok5cCeyky66JsWqY4sA",
-  //         });
-  //         console.log("currentToken, ", currentToken);
-  //         await cbToken?.(currentToken || "");
-  //         localStorage.setItem("deviceTokenId", currentToken);
-  //       } catch (e) {
-  //         console.log(e);
-  //       }
-  //     } else {
-  //       console.log("Do not have permission!");
-  //     }
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // });
-}
-
-export const udpateTokenDeviceId = async (currentId) => {
-  console.log("currentId  ", currentId);
-  const userId = getUserId();
-
-  const payload = {
-    deviceId: currentId,
+const { admin } = require("../../config/other/firebase");
+module.exports.sendPushNotification2 = async (fcmToken, data) => {
+  const message = {
+    token: fcmToken,
+    notification: {
+      title: "New task number: " + data.taskId,
+      body: data.title,
+    },
+    webpush: {
+      fcm_options: {
+        link: "https://dummypage.com",
+      },
+    },
   };
 
-  console.log("payload  ", payload);
-  console.log("id  ", userId);
+  // const message = {
+  //   token: fcmToken,
+  //   data: data,
+  //   webpush: {
+  //     fcm_options: {
+  //       link: "http:localhost:3000/",
+  //     },
+  //   },
+  // };
 
-  await axiosInstance.put(`/users/${userId}`, payload);
+  admin
+    .messaging()
+    .send(message)
+    .then((response) => {
+      // Message sent successfully
+      console.log("Message sent:", response);
+    })
+    .catch((error) => {
+      console.error("Error sending message:", error);
+    });
+};
+
+const { getAccessToken } = require("../authentication/firebaseService");
+const serviceAccount = require("../../config/other/servicepwa-dac50-firebase-adminsdk-zzzdn-a0366bd8a9.json");
+
+module.exports.sendPushNotification = async (fcmToken, data) => {
+  console.log();
+  try {
+    const accessToken = await getAccessToken();
+    const body = JSON.stringify({
+      message: {
+        token: fcmToken,
+        webpush: {
+          // data: data,
+          // notification: {
+          //   title: "New task number: " + data.taskId,
+          //   body: data.title,
+          //   requireInteraction: "true",
+          // },
+          fcm_options: {
+            link: "https://dummypage.com",
+          },
+        },
+      },
+    });
+    const res = await fetch(
+      `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: body,
+      }
+    );
+    const resData = await res.json();
+    return resData;
+  } catch (err) {
+    console.error(err.message);
+  }
 };
