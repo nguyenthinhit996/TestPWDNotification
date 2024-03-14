@@ -23,32 +23,52 @@ messaging.onBackgroundMessage(function (payload) {
     payload
   );
 
-  const notificationTitle = payload.notification.title;
+  // const notificationTitle = payload.notification.title;
+  // const notificationOptions = {
+  //   body: payload.notification.body,
+  //   data: payload.data,
+  //   taskId: payload.data.taskId,
+  //   tag: "notification-1",
+  // };
+
+  self.addEventListener(
+    "notificationclick",
+    function (e) {
+      var t = e.notification;
+      if ((console.log("notificationclick", e), "" !== e.action))
+        "close" === e.action && t.close();
+      else {
+        var n = "https://test-pwd-notification.vercel.app/";
+        n && self.clients.openWindow(n);
+      }
+    },
+    !1
+  );
+
+  const notificationTitle = "Background Message Title";
   const notificationOptions = {
-    body: payload.notification.body,
-    data: payload.data,
-    taskId: payload.data.taskId,
+    body: "Background Message body.",
+    icon: "/firebase-logo.png",
     tag: "notification-1",
   };
 
-  const channel = new BroadcastChannel("NotificationTaskView");
+  // const channel = new BroadcastChannel("NotificationTaskView");
 
-  //after use click notify on panner Inside the notification click event handler
-  self.registration.getNotifications().then(function (notifications) {
-    console.log("channel.postMessage ", notifications);
-    const dataSent = [];
-    notifications.forEach((element) => {
-      if (element.data.FCM_MSG) {
-        let newObject = {
-          data: element.data.FCM_MSG,
-        };
-        dataSent.push(newObject);
-      }
-    });
+  // //after use click notify on panner Inside the notification click event handler
+  // self.registration.getNotifications().then(function (notifications) {
+  //   // console.log("channel.postMessage ", notifications);
+  //   // const dataSent = [];
+  //   // notifications.forEach((element) => {
+  //   //   if (element.data.FCM_MSG) {
+  //   //     let newObject = {
+  //   //       data: element.data.FCM_MSG,
+  //   //     };
+  //   //     dataSent.push(newObject);
+  //   //   }
+  //   // });
+  //   // channel.postMessage(dataSent);
+  // });
 
-    channel.postMessage(dataSent);
-  });
-
-  self.registration.hideNotification();
+  // self.registration.hideNotification();
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
