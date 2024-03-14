@@ -38,12 +38,30 @@ messaging.onBackgroundMessage(function (payload) {
       if ((console.log("notificationclick", e), "" !== e.action))
         "close" === e.action && t.close();
       else {
-        var n = "https://test-pwd-notification.vercel.app/";
+        var n = "http://localhost:3000";
         n && self.clients.openWindow(n);
       }
     },
     !1
   );
+
+  self.addEventListener("install", function (e) {
+    self.skipWaiting(), console.log("MagicBellSW:install");
+  });
+  self.addEventListener("activate", function (e) {
+    console.log("MagicBellSW:activate"), e.waitUntil(self.clients.claim());
+  });
+  self.addEventListener("push", function (e) {
+    var t,
+      n = null === (t = e.data) || void 0 === t ? void 0 : t.json(),
+      r = {
+        body: n.content || "",
+        vibrate: [100, 50, 100],
+        data: "data nek",
+        actions: [{ action: "close", title: "Close" }],
+      };
+    e.waitUntil(self.registration.showNotification("n.title", r));
+  });
 
   const notificationTitle = "Background Message Title";
   const notificationOptions = {
