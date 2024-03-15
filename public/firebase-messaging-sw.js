@@ -1,4 +1,4 @@
- importScripts(
+importScripts(
   "https://cdnjs.cloudflare.com/ajax/libs/firebase/10.8.1/firebase-app-compat.min.js"
 );
 importScripts(
@@ -49,7 +49,7 @@ messaging.onBackgroundMessage(function (payload) {
     channel.postMessage(dataSent);
   });
 
-  //self.registration.hideNotification();
+  // self.registration.hideNotification();
 
-  //self.registration.showNotification(notificationTitle, notificationOptions);
+  // self.registration.showNotification(notificationTitle, notificationOptions);
 });

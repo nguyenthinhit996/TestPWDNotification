@@ -15,12 +15,10 @@ import { useContext } from "react";
 import { Box } from "@mui/material";
 import { ModalContext } from "@/context/ModalContext";
 import { DeviceInfoContext } from "@/context/DeviceInfoContext";
-import { useState } from "react";
 
 const TaskListTable = ({ tasks = [], isLoadingData = true, handleClick }) => {
   const { handleOnMessage, setNotifications } = useContext(ModalContext);
   const { deviceInfo } = useContext(DeviceInfoContext);
-  const [test, setText] = useState(["text"]);
 
   const firstLoad = React.useRef(true);
 
@@ -29,8 +27,9 @@ const TaskListTable = ({ tasks = [], isLoadingData = true, handleClick }) => {
   channel.onmessage = function (event) {
     console.log("recieved BroadcastChannel event", event);
 
-    let newNotifications = localStorage.getItem("notifications") || [];
-    newNotifications = JSON.parse(newNotifications) || [];
+    let newNotifications =
+      JSON.parse(localStorage.getItem("notifications")) || [];
+
     event?.data?.forEach((element) => {
       const currentData = element.data;
       const isExist = newNotifications.some((item) => {
@@ -43,13 +42,12 @@ const TaskListTable = ({ tasks = [], isLoadingData = true, handleClick }) => {
           ...currentData?.data,
           isRead: false,
         };
-        newNotifications.push(newMessage);
+        newNotifications.unshift(newMessage);
       }
     });
 
     localStorage.setItem("notifications", JSON.stringify(newNotifications));
     setNotifications(newNotifications);
-    setText([newNotifications.length, newNotifications]);
   };
 
   const checkWhenAppTurnoffWithBell = () => {
@@ -65,9 +63,9 @@ const TaskListTable = ({ tasks = [], isLoadingData = true, handleClick }) => {
           title: currentData.title,
           ...currentData,
           taskId: currentData.id,
-          isRead: false,
+          isRead: currentData?.status !== "Todo",
         };
-        newNotifications.push(newMessage);
+        newNotifications.unshift(newMessage);
       }
     });
     localStorage.setItem("notifications", JSON.stringify(newNotifications));
@@ -117,7 +115,6 @@ const TaskListTable = ({ tasks = [], isLoadingData = true, handleClick }) => {
 
   return (
     <Box>
-      <p> {JSON.stringify(test)}</p>
       <Table sx={{ minWidth: 650 }} aria-label="simple table">
         <TableHead>
           <TableRow>
