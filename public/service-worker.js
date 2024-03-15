@@ -168,17 +168,17 @@ function saveIntoIndexedDB(url, authHeader, payload) {
     objectStoreRequest.onsuccess = (event) => {
       console.log("Request saved to IndexedDB");
       channel.postMessage(
-        `a put request has been persist to IndexedDB(error) ${JSON.stringify(
-          event
+        `a put request has been persist to IndexedDB ${JSON.stringify(
+          postRequest[0]
         )}`
       );
     };
 
-    channel.postMessage(
-      `a put request has been persist to IndexedDB ${JSON.stringify(
-        postRequest[0]
-      )}`
-    );
+    objectStoreRequest.onerror = (err) => {
+      channel.postMessage(
+        `a put request has been persist to IndexedDB(error) ${err}`
+      );
+    };
   };
 }
 
