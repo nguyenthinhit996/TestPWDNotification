@@ -40,6 +40,9 @@ const cacheFiles = [
   "/assets/css/offline-style.css",
 ];
 
+const channel = new BroadcastChannel("testing-channel");
+const syncChannel = new BroadcastChannel("sync-channel");
+
 // on activation we clean up the previously registered service workers
 self.addEventListener("activate", (evt) => {
   evt.waitUntil(
@@ -141,44 +144,6 @@ self.addEventListener("fetch", (evt) => {
         })
       );
     }
-
-    // evt.respondWith(
-    //   Promise.resolve(evt.request.text()).then((payload) => {
-    //     // if application is online, send request over network
-    //     // if (navigator.onLine) {
-    //     //   return fetch(reqUrl, {
-    //     //     method: "PUT",
-    //     //     headers: {
-    //     //       Accept: "application/json",
-    //     //       "Content-Type": "application/json",
-    //     //       Authorization: authHeader,
-    //     //     },
-    //     //     body: payload,
-    //     //   });
-    //     // } else {
-    //     //   console.log("PUT request offline ");
-
-    //     //   // if offline, save request details to IndexedDB to be sent later
-    //     //   saveIntoIndexedDB(reqUrl, authHeader, payload);
-
-    //     //   // return dummy response so application can continue execution
-    //     //   const myOptions = { status: 200, statusText: "Fabulous" };
-    //     //   return new Response(payload, myOptions);
-    //     // }
-
-    //     // TODO solution 2
-    //     // if (!navigator.onLine) {
-    //     //   console.log("PUT request offline ");
-
-    //     //   // if offline, save request details to IndexedDB to be sent later
-    //     //   saveIntoIndexedDB(reqUrl, authHeader, payload);
-
-    //     //   // return dummy response so application can continue execution
-    //     //   const myOptions = { status: 200, statusText: "Fabulous" };
-    //     //   return new Response(payload, myOptions);
-    //     // }
-    //   })
-    // );
   }
 });
 
@@ -202,7 +167,18 @@ function saveIntoIndexedDB(url, authHeader, payload) {
 
     objectStoreRequest.onsuccess = (event) => {
       console.log("Request saved to IndexedDB");
+      channel.postMessage(
+        `a put request has been persist to IndexedDB(error) ${JSON.stringify(
+          event
+        )}`
+      );
     };
+
+    channel.postMessage(
+      `a put request has been persist to IndexedDB ${JSON.stringify(
+        postRequest[0]
+      )}`
+    );
   };
 }
 
@@ -237,49 +213,7 @@ async function sendOfflinePostRequestsToServer() {
     var allRecords = objectStore.getAll(); // get all records
     let currentRecord = null;
 
-    allRecords.onsuccess = function () {
-      if (allRecords.result && allRecords.result.length > 0) {
-        const lastRecord = allRecords.result.pop();
-        if (lastRecord && lastRecord.url.includes("pwdbackend")) {
-          // perform request over network
-          // only submit the last item in indexedDB(due to its status is the latest)
-          fetch(lastRecord.url, {
-            method: "PUT",
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "application/json",
-              Authorization: lastRecord.authHeader,
-            },
-            body: lastRecord.payload,
-          }).then((response) => {
-            if (response.ok) {
-              const transaction = db.transaction(
-                [objectStoreName],
-                "readwrite"
-              );
-              const objectStore = transaction.objectStore(objectStoreName);
-              // remove details from IndexedDB
-              objectStore.delete(lastRecord.id);
-            } else {
-              console.log(
-                "An error occured whilst trying to send a PUT request from IndexedDB."
-              );
-            }
-          });
-        }
-
-        for (var i = 0; i < allRecords.result.length; i++) {
-          console.log("IndexedDB records: ", allRecords.result);
-          currentRecord = allRecords.result[i];
-
-          // delete the intermediate request
-          // remove details from IndexedDB
-          const transaction = db.transaction([objectStoreName], "readwrite");
-          const objectStore = transaction.objectStore(objectStoreName);
-          objectStore.delete(currentRecord.id);
-        }
-      }
-    };
+    allRecords.onsuccess = () => syncPutRequest(allRecords);
   };
 }
 
@@ -319,4 +253,43 @@ async function updateExistingCache(key, updatedValue) {
     return;
   }
   cacheStorage.put(key, Response.json(updatedValue));
+}
+
+async function syncPutRequest(allRecords) {
+  if (allRecords.result && allRecords.result.length > 0) {
+    for (var i = 0; i < allRecords.result.length; i++) {
+      console.log("IndexedDB records: ", allRecords.result);
+      currentRecord = allRecords.result[i];
+
+      const result = await fetch(currentRecord.url, {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: currentRecord.authHeader,
+        },
+        body: currentRecord.payload,
+      });
+
+      syncChannel.postMessage(
+        `PUT request with ${JSON.stringify(
+          currentRecord.payload
+        )} has been sent to server`
+      );
+
+      if (result.ok) {
+        const transaction = db.transaction([objectStoreName], "readwrite");
+        const objectStore = transaction.objectStore(objectStoreName);
+        // remove details from IndexedDB
+        objectStore.delete(currentRecord.id);
+      } else {
+        console.log(
+          "An error occured whilst trying to send a PUT request from IndexedDB."
+        );
+        syncChannel.postMessage(
+          `PUT request with error has not been sent to server`
+        );
+      }
+    }
+  }
 }

@@ -3,12 +3,18 @@
 import TaskListItem from "@/components/TaskListItem";
 import Box from "@mui/material/Box";
 import SelectInput from "@/components/common/SelectInput";
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { mapStatusSelectOption, mapWarehouseSelectOption } from "@/util/Utils";
 import TaskListTable from "@/components/TaskListTable";
 import Typography from "@mui/material/Typography";
 import axiosInstance from "@/config/axiosConfig";
-import { mapStatusApiResult, getUserId, TASK_LOCAL_KEY } from "@/util/Utils";
+import {
+  mapStatusApiResult,
+  getUserId,
+  CURRENT_TASK_ID,
+  TASKS_ID_VISITED,
+  OFFLINE_MSG,
+} from "@/util/Utils";
 import { STATUS_STASK } from "@/common/Text";
 import FullScreenDialog from "@/common/DialogNotificationFullScreen";
 import NavBar from "@/components/common/NavBar";
@@ -16,6 +22,8 @@ import { useTheme, useMediaQuery } from "@mui/material";
 import { Guard } from "@/components/common/Guard.js";
 import { PulseLoader } from "react-spinners";
 import { useRouter } from "next/navigation";
+import WarningModal from "@/components/common/WarningModal";
+import { useIsOnline } from "react-use-is-online";
 
 const TaskList = () => {
   const theme = useTheme(); // Access the theme for breakpoint values
@@ -31,6 +39,8 @@ const TaskList = () => {
   const statusValues = useMemo(() => mapStatusSelectOption(), []);
   const warehouseValues = useMemo(() => mapWarehouseSelectOption(data), [data]);
   const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const { isOffline } = useIsOnline();
 
   useEffect(() => {
     const userId = getUserId();
@@ -59,20 +69,32 @@ const TaskList = () => {
 
   console.log(finalData);
 
-  const handleClickDetail = useCallback(async (id) => {
-    try {
-      debugger;
-      const { data = {} } = await axiosInstance.get(`/tasks/${id}`);
-      localStorage.setItem(TASK_LOCAL_KEY, JSON.stringify(data));
-      router.push("/detail");
-    } catch (error) {
-      console.log(error);
+  const handleClickDetail = (id) => {
+    // const { isOffline } = useNavigatorOnline();
+    let tasksId = localStorage.getItem(TASKS_ID_VISITED) || [];
+    tasksId = !Array.isArray(tasksId) ? JSON.parse(tasksId) : tasksId;
+    const isCurrentIdVisited = tasksId.includes(id);
+
+    if (isOffline && !isCurrentIdVisited) {
+      setOpen(true);
+      return;
     }
-  }, []);
+
+    setOpen(false);
+    localStorage.setItem(CURRENT_TASK_ID, id);
+    !isCurrentIdVisited && tasksId.push(id);
+    localStorage.setItem(TASKS_ID_VISITED, JSON.stringify(tasksId));
+    router.push("/detail");
+  };
 
   return (
     <Guard>
       <NavBar />
+      <WarningModal
+        open={open}
+        onClose={() => setOpen(false)}
+        message={OFFLINE_MSG}
+      />
       {isMobile && <FullScreenDialog />}
       <Box
         sx={{
@@ -120,16 +142,27 @@ const TaskList = () => {
         </Box>
 
         <Box sx={{ display: { xs: "block", sm: "none" } }}>
-          {finalData.length > 0
-            ? finalData.map((item) => (
-                <TaskListItem
-                  task={item}
-                  key={item.id}
-                  handleClick={handleClickDetail}
-                />
-              ))
-            : null}
-          {finalData.length === 0 ? (
+          {finalData.length > 0 ? (
+            finalData.map((item) => (
+              <TaskListItem
+                task={item}
+                key={item.id}
+                handleClick={handleClickDetail}
+              />
+            ))
+          ) : (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                width: "100%",
+                marginTop: "30px",
+              }}
+            >
+              No matching records found
+            </Box>
+          )}
+          {isLoadingData ? (
             <Box
               sx={{
                 display: "flex",

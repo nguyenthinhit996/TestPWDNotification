@@ -2,11 +2,18 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import BedgeStatus from "@/common/BadgeStatus";
 import IconButton from "@mui/material/IconButton";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 const TaskListItem = ({ task, handleClick }) => {
-  const router = useRouter();
   const { id, title, warehouse, status } = task;
+  const [syncMsg, setSyncMsg] = useState("");
+
+  const syncChannel = new BroadcastChannel("sync-channel");
+
+  syncChannel.onmessage = (e) => {
+    console.log(e.data);
+    setSyncMsg(e.data);
+  };
 
   return (
     <IconButton
@@ -35,7 +42,7 @@ const TaskListItem = ({ task, handleClick }) => {
             align="left"
             sx={{ fontWeight: "700" }}
           >
-            {title}
+            {title} - {syncMsg}
           </Typography>
 
           <Typography

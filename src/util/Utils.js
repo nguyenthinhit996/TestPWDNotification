@@ -160,6 +160,8 @@ const getUserId = () => {
 };
 
 const TASK_LOCAL_KEY = "task";
+const CURRENT_TASK_ID = "currentTaskId";
+const TASKS_ID_VISITED = "tasksIdVisited";
 
 function minVersionCheck(versionString, majorVersion, minorVersion) {
   const [osMajorVersion, osMinorVersion] = versionString.split(".");
@@ -174,6 +176,11 @@ function minVersionCheck(versionString, majorVersion, minorVersion) {
   }
 }
 
+const IOS_WARNING_MSG = `This web demo requires iOS 16.5 or later for pushing notifications.
+Please run a software update or continue wihout notification.`;
+
+const OFFLINE_MSG = `You are offline, please connect to the internet to view this task.`;
+
 export {
   mapStatusSelectOption,
   mapWarehouseSelectOption,
@@ -186,4 +193,8 @@ export {
   getUserId,
   TASK_LOCAL_KEY,
   minVersionCheck,
+  CURRENT_TASK_ID,
+  TASKS_ID_VISITED,
+  IOS_WARNING_MSG,
+  OFFLINE_MSG,
 };

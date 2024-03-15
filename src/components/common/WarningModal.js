@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Button,
   Dialog,
@@ -7,15 +7,12 @@ import {
   DialogTitle,
 } from "@mui/material";
 
-const WarningModal = ({ open, onClose }) => {
+const WarningModal = ({ open, onClose, message }) => {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>Warning</DialogTitle>
       <DialogContent>
-        <p>
-          This web demo requires iOS 16.5 or later for pushing notifications.
-          Please run a software update or continue wihout notification.
-        </p>
+        <p>{message}</p>
       </DialogContent>
       <DialogActions>
         <Button

@@ -13,6 +13,8 @@ import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import SendIcon from "@mui/icons-material/Send";
+import LoadingButton from "@mui/lab/LoadingButton";
 import Alert from "@mui/material/Alert";
 import { useFormik } from "formik";
 import * as yup from "yup";
@@ -264,24 +266,42 @@ export default function SignIn() {
             Forgot password?
           </Typography>
 
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{
-              mt: 5,
-              mb: 2,
-              backgroundColor: "#F4721E",
-              pt: 2,
-              pb: 2,
-              "&:hover": {
-                backgroundColor: "#BF5816",
-                cursor: "pointer",
-              },
-            }}
-          >
-            Login
-          </Button>
+          {formik?.isSubmitting ? (
+            <LoadingButton
+              endIcon={<SendIcon />}
+              loading
+              fullWidth
+              loadingPosition="end"
+              variant="contained"
+              sx={{
+                mt: 5,
+                mb: 2,
+                pt: 2,
+                pb: 2,
+              }}
+            >
+              <span>Login</span>
+            </LoadingButton>
+          ) : (
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{
+                mt: 5,
+                mb: 2,
+                backgroundColor: "#F4721E",
+                pt: 2,
+                pb: 2,
+                "&:hover": {
+                  backgroundColor: "#BF5816",
+                  cursor: "pointer",
+                },
+              }}
+            >
+              Login
+            </Button>
+          )}
         </Box>
       </Box>
     </Box>
