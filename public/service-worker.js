@@ -278,6 +278,11 @@ async function syncPutRequest(allRecords) {
       );
 
       if (result.ok) {
+        syncChannel.postMessage(
+          `PUT request with ${JSON.stringify(
+            currentRecord.payload
+          )} has been sent to server ok`
+        );
         const transaction = db.transaction([objectStoreName], "readwrite");
         const objectStore = transaction.objectStore(objectStoreName);
         // remove details from IndexedDB
