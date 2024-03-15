@@ -277,24 +277,15 @@ async function syncPutRequest(allRecords) {
         )} has been sent to server`
       );
 
-      if (result.ok) {
-        syncChannel.postMessage(
-          `PUT request with ${JSON.stringify(
-            currentRecord.payload
-          )} has been sent to server ok`
-        );
-        const transaction = db.transaction([objectStoreName], "readwrite");
-        const objectStore = transaction.objectStore(objectStoreName);
-        // remove details from IndexedDB
-        objectStore.delete(currentRecord.id);
-      } else {
-        console.log(
-          "An error occured whilst trying to send a PUT request from IndexedDB."
-        );
-        syncChannel.postMessage(
-          `PUT request with error has not been sent to server`
-        );
-      }
+      syncChannel.postMessage(
+        `PUT request with ${JSON.stringify(
+          currentRecord.payload
+        )} has been sent to server ok`
+      );
+      const transaction = db.transaction([objectStoreName], "readwrite");
+      const objectStore = transaction.objectStore(objectStoreName);
+      // remove details from IndexedDB
+      objectStore.delete(currentRecord.id);
     }
   }
 }
